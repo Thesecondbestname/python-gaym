@@ -37,11 +37,11 @@ BOTTOM = pygame.display.Info().current_h
 RIGHT = pygame.display.Info().current_w
 TOP = 0
 LEFT = 0
-WINDOW_WIDTH = RIGHT / 1.5
-WINDOW_HEIGHT = BOTTOM / 1.5
-DRAG = 0.98
+WINDOW_WIDTH = RIGHT / 5
+WINDOW_HEIGHT = BOTTOM / 5
+DRAG = 0.95
 SPIN_SPEED = 1
-SPEED = 3
+SPEED = 5
 INFO_COLOR = (205, 214, 244)
 BAD_COLOR = (243, 139, 168)
 GOOD_COLOR = (166, 227, 161)
@@ -256,9 +256,9 @@ def main() -> None:
     # instantiate game variables
     vel: Vec[float] = Vec((5, 5))
     pos: Vec[int] = Vec(window.position)
-    tick, points, growing, point = 0, 0, False, newpoint()
-    c_size = WINDOW_WIDTH // 15
-    p_size = c_size // 3
+    c_size: int = int(WINDOW_WIDTH / 15)
+    p_size = c_size 
+    tick, points, growing, point = 0, 0, False, newpoint(p_size)
 
     # create projectiles
     projectiles: List[ProjectileInterface] = [
@@ -301,9 +301,9 @@ def main() -> None:
             Vec((WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2)),
             point - window.position,
         ):
-            point = newpoint()
+            point = newpoint(p_size)
             points += 1
-            c_size = WINDOW_WIDTH // 15
+            c_size = int(WINDOW_WIDTH // 15)
             growing = False
 
         if tick % 60 == 0:
@@ -312,7 +312,7 @@ def main() -> None:
         if growing:
             c_size += 7
             if c_size > WINDOW_WIDTH / 2:
-                c_size = WINDOW_WIDTH // 15
+                c_size = int(WINDOW_WIDTH // 15)
                 growing = False
 
         # update game for events
@@ -328,15 +328,17 @@ def main() -> None:
         pygame.display.flip()
 
 
-def newpoint() -> Vec[int]:
-    return Vec((randint(0, RIGHT - LEFT), randint(0, BOTTOM - TOP)))
+def newpoint(size: int) -> Vec[int]:
+    x_border = RIGHT//10
+    y_border = BOTTOM//10
+    return Vec((randint(x_border, RIGHT - (LEFT+y_border)), randint(x_border, BOTTOM - (TOP + y_border))))
 
 def new_projectile(size: float, win_pos: Tuple[int, int]):
     kind = randint(0,1)
     x,y = randint(1,10),randint(1,10)
-    while (Vec((RIGHT / x, BOTTOM / y)) - Vec(win_pos)).fold(lambda x,y: x+y) < 0: 
+    while (Vec((RIGHT / x, BOTTOM / y)) - Vec(win_pos)).fold(lambda x,y: math.hypot(x,y)) < WINDOW_WIDTH: 
         x,y = randint(1,10),randint(1,10)
-    size = size + randint(-3,1)
+    size = size + randint(0,5)
     amnt = randint(3,6)
     velx,vely = randint(-4,3),randint(-4,3)
     if velx ==0: velx = 1
