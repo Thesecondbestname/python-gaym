@@ -26,7 +26,10 @@ class Vec(tuple[T, T]):
     def tup(self) -> Tuple[T, T]:
         return (self[0], self[1])
 
-    def map(self, f):
+    def fold(self, f):
+        return f(self[0], self[1])
+
+    def fmap(self, f):
         return Vec((f(self[0], self[1])))
 
 
@@ -138,7 +141,7 @@ class Circle(ProjectileInterface):
     ):
         self.size: float = size
         self.center = Vec(pos)
-        self.vel: Vec = vel
+        self.vel: Vec[int] = vel
         self.pos: List[Tuple[Vec[float], int]] = []
         self.amnt = group_amnt
         self.angle: float = 1
@@ -247,8 +250,8 @@ def main() -> None:
     window = Window.from_display_module()
     text_font = pygame.font.SysFont("", int(WINDOW_HEIGHT // 5))
     clock = pygame.time.Clock()
-    global TOP, LEFT
-    LEFT, TOP = calculate_top_left_offset(window, screen)
+    # global TOP, LEFT
+    # LEFT, TOP = calculate_top_left_offset(window, screen)
 
     # instantiate game variables
     vel: Vec[float] = Vec((5, 5))
@@ -258,7 +261,7 @@ def main() -> None:
     p_size = c_size // 3
 
     # create projectiles
-    projectiles: List = [
+    projectiles: List[ProjectileInterface] = [
         Sinusoiod((RIGHT / 4, BOTTOM / 4), size=20, vel=Vec((1, 1)), group_amnt=6),
         Circle((RIGHT / 2, BOTTOM / 2), size=30, vel=Vec((0, 1)), group_amnt=5),
     ]
@@ -269,7 +272,7 @@ def main() -> None:
     while True:
         # update game state
         tick += 1
-        clock.tick(120)
+        clock.tick(60)
         vel = update_velocity(vel)
         pos, vel = solve_window_collisions(pos, vel)
         pos += vel
@@ -289,7 +292,7 @@ def main() -> None:
             pro.update_positions()
             if pro.moving_outside_view():
                 projectiles.remove(pro)
-            pro.draw(screen, window.position)
+            pro.draw(screen, Vec(window.position))
 
         # getting points logic
         if circle_touches(
@@ -302,6 +305,9 @@ def main() -> None:
             points += 1
             c_size = WINDOW_WIDTH // 15
             growing = False
+
+        if tick % 60 == 0:
+            projectiles.append(new_projectile(p_size, window.position))
 
         if growing:
             c_size += 7
@@ -325,6 +331,18 @@ def main() -> None:
 def newpoint() -> Vec[int]:
     return Vec((randint(0, RIGHT - LEFT), randint(0, BOTTOM - TOP)))
 
+def new_projectile(size: float, win_pos: Tuple[int, int]):
+    kind = randint(0,1)
+    x,y = randint(1,10),randint(1,10)
+    while (Vec((RIGHT / x, BOTTOM / y)) - Vec(win_pos)).fold(lambda x,y: x+y) < 0: 
+        x,y = randint(1,10),randint(1,10)
+    size = size + randint(-3,1)
+    amnt = randint(3,6)
+    velx,vely = randint(-4,3),randint(-4,3)
+    if velx ==0: velx = 1
+    if vely ==0: vely = 1
+    if kind ==0: return Sinusoiod((RIGHT / x, BOTTOM / y), size=size, vel=Vec((velx, vely)), group_amnt=amnt)
+    if kind ==1: return Circle((RIGHT / x, BOTTOM / y), size=size, vel=Vec((velx, vely)), group_amnt=amnt)
 
 def calculate_top_left_offset(window: Window, screen) -> Tuple[int, int]:
     window.maximize()
